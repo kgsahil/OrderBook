@@ -1,0 +1,159 @@
+# Build directories
+build/
+Build/
+BUILD/
+out/
+Out/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+*.cmake
+!CMakeLists.txt
+
+# Visual Studio files
+.vs/
+.vscode/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.db
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Compiled Object files
+*.o
+*.obj
+*.lo
+*.slo
+*.ko
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+*.ilk
+
+# CMake IDE files
+*.cbp
+CMakeLists.txt.user
+
+# Qt Creator
+CMakeLists.txt.user*
+
+# Eclipse
+.project
+.cproject
+.settings/
+
+# CLion
+.idea/
+cmake-build-*/
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+
+# Temporary files
+*~
+*.swp
+*.swo
+*.tmp
+*.bak
+*.cache
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Testing
+Testing/
+test-results/
+*.log
+
+# Coverage
+*.gcov
+*.gcda
+*.gcno
+coverage/
+*.info
+
+# Sanitizers
+*.asan
+*.msan
+*.tsan
+*.ubsan
+
+# Profiling
+*.prof
+gmon.out
+perf.data*
+
+# Package files
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+*.7z
+
+# Backup files
+*.orig
+*.rej
+
