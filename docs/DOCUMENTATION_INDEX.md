@@ -33,6 +33,13 @@ Complete guide to all project documentation.
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Contribution guidelines
 - **[INTERVIEW_GUIDE.md](INTERVIEW_GUIDE.md)** - Interview preparation guide
 
+## Performance & Benchmarks
+
+- **[PERFORMANCE.md](PERFORMANCE.md)** - Comprehensive performance analysis and production-grade assessment
+- **[benchmarks/README.md](../benchmarks/README.md)** - Benchmark suite documentation
+- **[benchmarks/SUMMARY.md](../benchmarks/SUMMARY.md)** - Benchmark results summary
+- **[SPSC_QUEUE_ANALYSIS.md](SPSC_QUEUE_ANALYSIS.md)** - Lock-free queue performance analysis
+
 ## Reference
 
 - **[REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)** - Component segregation details
@@ -46,6 +53,7 @@ Complete guide to all project documentation.
 | Understand the architecture | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) |
 | Deploy with Docker | [DOCKER_SETUP.md](DOCKER_SETUP.md) |
 | Learn the API | [API_CONTRACT.md](API_CONTRACT.md) |
+| Understand performance | [PERFORMANCE.md](PERFORMANCE.md) |
 | Troubleshoot issues | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
 | Contribute code | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 

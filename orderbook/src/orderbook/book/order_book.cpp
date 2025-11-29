@@ -20,18 +20,30 @@ bool OrderBook::addOrder(core::Order order) {
         return false;
     }
     
-    if (order.side == core::Side::Buy) {
-        auto& q = bids_[order.price];
+    // Optimized: Cache price and side to avoid repeated access, use emplace for locators
+    const auto price = order.price;
+    const auto side = order.side;
+    const auto orderId = order.orderId;
+    
+    if (side == core::Side::Buy) {
+        // Get or create deque for this price level
+        auto& q = bids_[price];
+        
+        // Emplace order and capture iterator efficiently
         q.emplace_back(std::move(order));
-        auto it = std::prev(q.end());
-        locators_[it->orderId] = OrderLocator{core::Side::Buy, it->price, it};
-        OB_LOG("ADD id=" << it->orderId << " side=B price=" << it->price << " qty=" << it->quantity);
+        auto orderIt = std::prev(q.end());
+        
+        // Use emplace (no hint needed for small maps) - more efficient than operator[]
+        locators_.emplace(orderId, OrderLocator{side, price, orderIt});
+        OB_LOG("ADD id=" << orderId << " side=B price=" << price << " qty=" << orderIt->quantity);
     } else {
-        auto& q = asks_[order.price];
+        auto& q = asks_[price];
+        
         q.emplace_back(std::move(order));
-        auto it = std::prev(q.end());
-        locators_[it->orderId] = OrderLocator{core::Side::Sell, it->price, it};
-        OB_LOG("ADD id=" << it->orderId << " side=S price=" << it->price << " qty=" << it->quantity);
+        auto orderIt = std::prev(q.end());
+        
+        locators_.emplace(orderId, OrderLocator{side, price, orderIt});
+        OB_LOG("ADD id=" << orderId << " side=S price=" << price << " qty=" << orderIt->quantity);
     }
     return true;
 }
@@ -39,7 +51,13 @@ bool OrderBook::addOrder(core::Order order) {
 bool OrderBook::cancelOrder(core::OrderId id) {
     auto locIt = locators_.find(id);
     if (locIt == locators_.end()) return false;
+    
+    // Copy the locator before erasing from map to avoid iterator invalidation issues
     auto loc = locIt->second;
+    
+    // Erase from locators map first to avoid dangling references
+    locators_.erase(locIt);
+    
     if (loc.side == core::Side::Buy) {
         auto it = bids_.find(loc.price);
         if (it == bids_.end()) return false;
@@ -55,7 +73,6 @@ bool OrderBook::cancelOrder(core::OrderId id) {
         dq.erase(loc.it);
         if (dq.empty()) asks_.erase(it);
     }
-    locators_.erase(locIt);
     return true;
 }
 

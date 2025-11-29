@@ -73,6 +73,30 @@ services:
     networks:
       - trading-network
 
+  benchmarks:
+    build:
+      context: .
+      dockerfile: benchmarks/Dockerfile
+    container_name: benchmarks-service
+    depends_on:
+      orderbook:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ORDERBOOK_HOST=orderbook
+      - ORDERBOOK_PORT=8000
+      - TCP_HOST=orderbook
+      - TCP_PORT=9999
+    volumes:
+      - ./benchmarks/results:/app/results
+      - ./benchmarks/reports:/app/reports
+    networks:
+      - trading-network
+    profiles:
+      - benchmarks  # Only start with --profile benchmarks
+
 networks:
   trading-network:
     driver: bridge

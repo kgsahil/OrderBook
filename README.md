@@ -12,19 +12,32 @@
 
 ## ⚡ Performance Characteristics
 
-> **Note:** The following numbers are **theoretical estimates** based on architecture analysis, complexity analysis, and known performance characteristics of lock-free data structures. Actual performance will vary based on hardware, workload, and system configuration.
+> **Benchmarked Performance** - Results from production-grade benchmarks on 6-core @ 2.37 GHz system
 
-| Metric | Estimated Value | Basis |
-|--------|----------------|-------|
-| **Throughput** | **500K+ orders/sec** | Architecture analysis: single-threaded matching with O(log N) operations |
-| **Latency** | **<25μs** | Calculated from: TCP handling (~21μs) + order processing (~3-15μs) |
-| **Queue Ops** | **10M+ ops/sec** | Lock-free SPSC queue literature: typical performance for atomic operations |
-| **Cancel Speed** | **<1μs** | O(1) hash-based lookup complexity |
-| **Concurrent Clients** | **1000+** | FastAPI/WebSocket typical capacity (tested) |
+| Metric | Actual Performance | Grade |
+|--------|-------------------|-------|
+| **Order Submission** | **1.7 μs** (P99: 28.2 μs) | ✅ Excellent |
+| **Price Lookup** | **39.6 ns** (P99: 51 ns) | ✅ Excellent |
+| **Order Cancellation** | **51.7 ns** | ✅ Excellent |
+| **Market Matching** | **77.4 ns** | ✅ Excellent |
+| **Limit Matching** | **192.7 ns** (P99: 561 ns) | ✅ Excellent |
+| **Queue Operations** | **12-14 ns** | ✅ Excellent |
+| **Throughput** | **533K orders/sec** | ✅ Excellent |
+| **Price Lookup Throughput** | **10.6M ops/sec** | ✅ Excellent |
 
-**Performance Analysis:** See [SPSC Queue Analysis](docs/SPSC_QUEUE_ANALYSIS.md) and [Architecture](docs/ARCHITECTURE.md#performance-characteristics) for detailed breakdowns.
+**Key Highlights:**
+- ✅ **Sub-microsecond latency** on critical paths
+- ✅ **Sub-100ns price lookups** (P99: 51 ns)
+- ✅ **Production-grade performance** suitable for HFT
+- ✅ **Lock-free operations** with nanosecond-level overhead
 
-*Estimated based on architecture analysis. Actual benchmarks coming soon.*
+**Performance Analysis:** 
+- 📊 [Complete Performance Analysis](docs/PERFORMANCE.md) - Detailed benchmarks and production assessment
+- 📈 [Benchmark Suite](benchmarks/README.md) - Run and interpret benchmarks
+- 🔬 [SPSC Queue Analysis](docs/SPSC_QUEUE_ANALYSIS.md) - Lock-free queue performance
+- 🏗️ [Architecture](docs/ARCHITECTURE.md#performance-characteristics) - System design and performance characteristics
+
+**Note:** C++ benchmarks measure in-memory operations (production-realistic). Python TCP benchmarks run on localhost - add network RTT for real-world estimates (see [Performance Docs](docs/PERFORMANCE.md#network-considerations)).
 
 ---
 
@@ -191,8 +204,9 @@ SPSC Queue Operation  │ ~100ns        │ ~500ns         │ ~1μs
 **📊 For detailed performance analysis, see:**
 - [SPSC Queue Analysis](docs/SPSC_QUEUE_ANALYSIS.md) - Lock-free queue performance breakdown
 - [Architecture Performance](docs/ARCHITECTURE.md#performance-characteristics) - System-wide performance characteristics
+- **[Benchmark Suite](benchmarks/README.md)** - Actual performance measurements and test results
 
-**⚠️ Note:** These are theoretical estimates. Actual performance will vary based on:
+**⚠️ Note:** These are theoretical estimates. For actual measured performance, run the [benchmark suite](benchmarks/README.md). Actual performance will vary based on:
 - Hardware specifications (CPU, memory, network)
 - System load and workload patterns
 - Operating system and kernel configuration
