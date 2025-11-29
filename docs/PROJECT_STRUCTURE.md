@@ -89,7 +89,7 @@ dashboard/
 
 ### 3. Agents Component (`agents/`)
 
-**Purpose:** AI trading agents using LLMs
+**Purpose:** AI trading agents with optional LLM support, plus local ML and statistical heuristic strategies
 
 **Structure:**
 ```
@@ -111,8 +111,10 @@ agents/
 **Dependencies:** Requires OrderBook service
 
 **Features:**
-- Multiple configurable agents
-- LLM-based decision making (Gemini, OpenAI, Anthropic)
+- Multiple configurable agents with personalities
+- Optional LLM-based decision making (Gemini, OpenAI, Anthropic) when `ENABLE_LLM=true` and an API key is provided
+- Local ML strategy (RandomForest) controlled via `USE_ML_FALLBACK` / config
+- Statistical heuristic strategies with personality-based behavior
 - Real-time orderbook access
 - Automatic connection management
 

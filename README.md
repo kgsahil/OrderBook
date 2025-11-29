@@ -22,7 +22,7 @@ Components communicate only via network protocols (WebSocket/REST API). No file 
 
 **Start all components:**
 ```bash
-# Default: Agents use heuristic fallback strategy (no LLM required)
+# Default: Agents use local ML + heuristic strategies (no LLM required)
 docker-compose up -d --build
 
 # To enable LLM for agents (requires API key):
@@ -40,7 +40,7 @@ docker-compose up -d orderbook
 docker-compose up -d dashboard
 
 # Start Agents (requires OrderBook)
-# Default: Uses heuristic fallback strategy (no API key needed)
+# Default: Uses local ML + heuristic strategies (no API key needed)
 docker-compose up -d agents
 
 # To enable LLM for agents:
@@ -54,7 +54,7 @@ docker-compose up -d agents
 - **OrderBook API:** [http://localhost:8000](http://localhost:8000) - WebSocket + REST API
 
 **Note:** 
-- **Agents use heuristic fallback strategy by default** (no LLM/API key required)
+- **Agents use local ML + heuristic strategies by default** (no LLM/API key required)
 - Set `ENABLE_LLM=true` to use LLM-based decision making (requires API key)
 - Agents will automatically connect to OrderBook on startup
 - If OrderBook connection fails, agents will terminate
@@ -193,45 +193,6 @@ Orderbook/
 └── docker-compose.yml      # Orchestration for all components
 ```
 
-**Component Independence:**
-- Each component has its own directory
-- Each component has its own Dockerfile
-- No shared files between components
-- Communication only via network protocols
-
-```
-Orderbook/
-├── orderbook/              # OrderBook component (independent)
-│   ├── apps/               # C++ applications
-│   ├── include/            # C++ headers
-│   ├── src/                # C++ sources
-│   ├── websocket_server/   # Python WebSocket server
-│   ├── docker/             # Supervisor config
-│   ├── CMakeLists.txt      # C++ build config
-│   └── Dockerfile          # OrderBook Dockerfile
-│
-├── dashboard/              # Dashboard component (independent)
-│   ├── static/             # HTML/JS dashboard UI
-│   ├── server.py           # FastAPI server
-│   ├── requirements.txt    # Python dependencies
-│   └── Dockerfile          # Dashboard Dockerfile
-│
-├── agents/                 # Agents component (independent)
-│   ├── config/             # Agent configuration
-│   ├── agent_base.py       # Base agent class
-│   ├── langraph_agent.py   # LLM-based agent
-│   ├── agent_runner.py     # Agent manager
-│   ├── run_agents.py       # Entry point
-│   ├── requirements.txt    # Python dependencies
-│   └── Dockerfile          # Agents Dockerfile
-│
-├── docs/                   # Documentation
-│   ├── API_CONTRACT.md     # Inter-component API contract
-│   └── ...
-│
-└── docker-compose.yml      # Orchestration for all components
-```
-
 ## 🎯 Use Cases
 
 - **Learning**: Understand market microstructure and matching algorithms
@@ -288,6 +249,10 @@ Orderbook/
 - **[Running Services](docs/RUNNING_SERVICES.md)** - Manual service management
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Interview Guide](docs/INTERVIEW_GUIDE.md)** - Simplified 1-hour implementation
+
+**Agents & Strategies:**
+- **`agents/README.md`** - Agent architecture, configuration, and LLM/ML/heuristic behavior
+- **`agents/strategies/README.md`** - Detailed trading strategy module (ML model, personalities, heuristic rules)
 
 **See [docs/DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md) for complete documentation index.**
 

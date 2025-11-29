@@ -17,8 +17,9 @@ OR
 ### 1. Start All Components
 
 ```bash
-# Set API key for agents (optional)
-export GOOGLE_API_KEY=your_api_key
+# (Optional) enable LLM-powered agents
+export ENABLE_LLM=true
+export GOOGLE_API_KEY=your_api_key  # or OPENAI_API_KEY / ANTHROPIC_API_KEY
 
 # Start all components
 docker-compose up -d --build
@@ -27,7 +28,7 @@ docker-compose up -d --build
 This will:
 - Build and start OrderBook (C++ backend + Python WebSocket server)
 - Build and start Dashboard (Admin interface)
-- Build and start Agents (if API key is set)
+- Build and start Agents (they always run; LLM is only used if `ENABLE_LLM=true` and an API key is set)
 
 ### 2. Open Your Browser
 
@@ -146,10 +147,11 @@ cd agents
 # Install dependencies (first time only)
 pip install -r requirements.txt
 
-# Set API key
-export GOOGLE_API_KEY=your_api_key
+# (Optional) enable LLM-powered decisions
+export ENABLE_LLM=true
+export GOOGLE_API_KEY=your_api_key  # or OPENAI_API_KEY / ANTHROPIC_API_KEY
 
-# Start agents
+# Start agents (will use local ML + heuristic strategies if LLM is disabled or no key is set)
 python run_agents.py config/agent_config.yaml
 ```
 
