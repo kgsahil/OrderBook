@@ -1,51 +1,38 @@
 # Build directories
 build/
-Build/
-BUILD/
 out/
-Out/
 cmake-build-*/
+*.exe
 
-# CMake generated files
-CMakeCache.txt
-CMakeFiles/
-CMakeScripts/
-cmake_install.cmake
-install_manifest.txt
-compile_commands.json
-CTestTestfile.cmake
-_deps/
-*.cmake
-!CMakeLists.txt
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
 
-# Visual Studio files
-.vs/
+# IDE
 .vscode/
-*.vcxproj
-*.vcxproj.filters
-*.vcxproj.user
-*.sln
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-*.db
-*.opendb
-*.opensdf
-*.sdf
-*.cachefile
-*.VC.db
-*.VC.VC.opendb
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# Visual Studio Code
-.vscode/
-*.code-workspace
+# Docker
+.docker/
+*.log
 
 # Compiled Object files
 *.o
 *.obj
-*.lo
-*.slo
 *.ko
 *.elf
 
@@ -53,20 +40,16 @@ _deps/
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (*.dll, *.so, *.dylib)
+*.dll
 *.so
 *.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
 
 # Executables
 *.exe
@@ -76,84 +59,32 @@ _deps/
 *.x86_64
 *.hex
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-*.ilk
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
 
-# CMake IDE files
-*.cbp
-CMakeLists.txt.user
+# Logs
+*.log
+logs/
+supervisor/
 
-# Qt Creator
-CMakeLists.txt.user*
-
-# Eclipse
-.project
-.cproject
-.settings/
-
-# CLion
-.idea/
-cmake-build-*/
-
-# Xcode
-*.xcodeproj
-*.xcworkspace
-xcuserdata/
-DerivedData/
+# OS specific
+Thumbs.db
+.DS_Store
 
 # Temporary files
-*~
-*.swp
-*.swo
 *.tmp
-*.bak
-*.cache
+*.temp
+.cache/
 
-# OS files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-Desktop.ini
-
-# Testing
-Testing/
-test-results/
-*.log
-
-# Coverage
-*.gcov
-*.gcda
-*.gcno
-coverage/
-*.info
-
-# Sanitizers
-*.asan
-*.msan
-*.tsan
-*.ubsan
-
-# Profiling
-*.prof
-gmon.out
-perf.data*
-
-# Package files
-*.deb
-*.rpm
-*.tar.gz
-*.zip
-*.7z
-
-# Backup files
-*.orig
-*.rej
-
+# Environment variables
+.env
+.env.local

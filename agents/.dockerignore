@@ -1,0 +1,18 @@
+# Agents component .dockerignore
+*.md
+!README.md
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.vscode
+.idea
+

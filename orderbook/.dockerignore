@@ -1,0 +1,20 @@
+# OrderBook component .dockerignore
+*.md
+*.txt
+!requirements.txt
+!CMakeLists.txt
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.vscode
+.idea
+

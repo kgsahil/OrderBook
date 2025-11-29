@@ -1,0 +1,78 @@
+services:
+  orderbook:
+    build:
+      context: ./orderbook
+      dockerfile: Dockerfile
+    container_name: orderbook-service
+    ports:
+      - "8000:8000"  # WebSocket server and REST API
+    environment:
+      - PYTHONUNBUFFERED=1
+      - BROADCAST_INTERVAL=0.1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - trading-network
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: dashboard-service
+    ports:
+      - "8080:8080"  # Admin dashboard
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ORDERBOOK_HOST=orderbook
+      - ORDERBOOK_PORT=8000
+    depends_on:
+      orderbook:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - trading-network
+    volumes:
+      - ./dashboard/static:/app/static
+
+  agents:
+    build:
+      context: .
+      dockerfile: agents/Dockerfile
+      # Enable BuildKit for cache mounts
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+    container_name: agents-service
+    depends_on:
+      orderbook:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WS_URL=ws://orderbook:8000/ws
+      - MAX_RETRIES=5
+      - RETRY_DELAY=5
+      # LLM is disabled by default - set ENABLE_LLM=true to use LLM
+      - ENABLE_LLM=${ENABLE_LLM:-false}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - LLM_PROVIDER=${LLM_PROVIDER:-gemini}
+      - LLM_MODEL=${LLM_MODEL:-gemini-2.0-flash-exp}
+      - USE_ML_FALLBACK=${USE_ML_FALLBACK:-true}
+    restart: "no"  # Don't auto-restart if connection fails
+    networks:
+      - trading-network
+
+networks:
+  trading-network:
+    driver: bridge
