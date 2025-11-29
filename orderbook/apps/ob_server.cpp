@@ -1,3 +1,4 @@
+#include "orderbook/oms/i_order_book_service.hpp"
 #include "orderbook/oms/instrument_manager.hpp"
 #include "orderbook/core/types.hpp"
 #include <iostream>
@@ -17,25 +18,46 @@
 
 using namespace ob;
 
-// Simple TCP server for the orderbook
+/**
+ * TCP server for the orderbook.
+ * 
+ * Uses dependency injection via IOrderBookService interface, enabling:
+ * - Testability (can inject mock service)
+ * - Swappable implementations
+ * - Follows Dependency Inversion Principle (SOLID)
+ */
 class OrderBookServer {
 public:
-    OrderBookServer(int port) : port_(port), running_(false) {
-        instrumentManager_ = std::make_unique<oms::InstrumentManager>();
+    /**
+     * Constructor with dependency injection.
+     * 
+     * @param port TCP port to listen on
+     * @param service OrderBook service implementation (defaults to InstrumentManager)
+     */
+    explicit OrderBookServer(
+        int port,
+        std::unique_ptr<oms::IOrderBookService> service = nullptr
+    ) : port_(port), running_(false) {
+        // Use provided service or create default implementation
+        if (service) {
+            service_ = std::move(service);
+        } else {
+            service_ = std::make_unique<oms::InstrumentManager>();
+        }
         
         // Set up event callback
-        instrumentManager_->setEventCallback([this](const events::Event& event) {
+        service_->setEventCallback([this](const events::Event& event) {
             handleEvent(event);
         });
         
-        instrumentManager_->start();
+        service_->start();
         nextOrderId_ = 1;
     }
     
     ~OrderBookServer() {
         stop();
-        if (instrumentManager_) {
-            instrumentManager_->stop();
+        if (service_) {
+            service_->stop();
         }
     }
     
@@ -107,8 +129,8 @@ private:
             std::string response = processRequest(request);
             
             // Process any pending events
-            if (instrumentManager_) {
-                instrumentManager_->processEvents();
+            if (service_) {
+                service_->processEvents();
             }
             
             send(clientSocket, response.c_str(), response.length(), 0);
@@ -162,18 +184,18 @@ private:
                 return "ERROR Invalid ticker\n";
             }
             
-            std::uint32_t symbolId = instrumentManager_->addInstrument(ticker, description, industry, initialPrice);
+            std::uint32_t symbolId = service_->addInstrument(ticker, description, industry, initialPrice);
             return "OK " + std::to_string(symbolId) + "\n";
             
         } else if (cmd == "REMOVE_INSTRUMENT") {
             std::uint32_t symbolId;
             iss >> symbolId;
-            bool ok = instrumentManager_->removeInstrument(symbolId);
+            bool ok = service_->removeInstrument(symbolId);
             return ok ? "OK\n" : "ERROR Instrument not found\n";
             
         } else if (cmd == "LIST_INSTRUMENTS") {
             std::ostringstream oss;
-            auto instruments = instrumentManager_->listInstruments();
+            auto instruments = service_->listInstruments();
             oss << "INSTRUMENTS " << instruments.size() << "\n";
             for (const auto& inst : instruments) {
                 oss << inst.symbolId << "|" << inst.ticker << "|" 
@@ -189,7 +211,7 @@ private:
             long long qty;
             iss >> symbolId >> sideChar >> typeChar >> price >> qty;
             
-            if (!instrumentManager_->hasInstrument(symbolId)) {
+            if (!service_->hasInstrument(symbolId)) {
                 return "ERROR Instrument not found\n";
             }
             
@@ -226,7 +248,7 @@ private:
                 core::Timestamp{nowNs}
             };
             
-            bool submitted = instrumentManager_->submitOrder(std::move(o));
+            bool submitted = service_->submitOrder(std::move(o));
             if (!submitted) {
                 return "ERROR Failed to submit order (queue full or validation failed)\n";
             }
@@ -236,20 +258,20 @@ private:
             std::uint32_t symbolId;
             unsigned long long orderId;
             iss >> symbolId >> orderId;
-            bool ok = instrumentManager_->cancelOrder(symbolId, orderId);
+            bool ok = service_->cancelOrder(symbolId, orderId);
             return ok ? "OK\n" : "NOTFOUND\n";
             
         } else if (cmd == "SNAPSHOT") {
             std::uint32_t symbolId;
             iss >> symbolId;
             
-            if (!instrumentManager_->hasInstrument(symbolId)) {
+            if (!service_->hasInstrument(symbolId)) {
                 return "ERROR Instrument not found\n";
             }
             
             std::ostringstream oss;
-            auto bids = instrumentManager_->getBidsSnapshot(symbolId, 10);
-            auto asks = instrumentManager_->getAsksSnapshot(symbolId, 10);
+            auto bids = service_->getBidsSnapshot(symbolId, 10);
+            auto asks = service_->getAsksSnapshot(symbolId, 10);
             
             oss << "SNAPSHOT " << symbolId << "\n";
             oss << "BIDS " << bids.size() << "\n";
@@ -294,7 +316,7 @@ private:
     int port_;
     int serverSocket_{-1};
     std::atomic<bool> running_;
-    std::unique_ptr<oms::InstrumentManager> instrumentManager_;
+    std::unique_ptr<oms::IOrderBookService> service_;  // Dependency injection via interface
     std::atomic<core::OrderId> nextOrderId_{1};
 };
 

@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional
 
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 
 from message_models import (
     AgentsSnapshotMessage,
@@ -58,8 +58,10 @@ async def _send_to_agents(payload: dict):
         if ws:
             try:
                 await ws.send_text(message)
-            except Exception:
+            except (WebSocketDisconnect, RuntimeError, ConnectionError):
                 pass
+            except Exception as e:
+                logger.warning(f"Unexpected error sending to agent {agent_id}: {e}")
 
 
 async def broadcast_instruments_update():
@@ -149,7 +151,10 @@ async def broadcast_agent_created(agent_data: dict):
     for connection in list(regular_connections):
         try:
             await connection.send_text(message)
-        except Exception:
+        except (WebSocketDisconnect, RuntimeError, ConnectionError):
+            disconnected.append(connection)
+        except Exception as e:
+            logger.warning(f"Unexpected error broadcasting agent_created: {e}")
             disconnected.append(connection)
     for connection in disconnected:
         regular_connections.discard(connection)

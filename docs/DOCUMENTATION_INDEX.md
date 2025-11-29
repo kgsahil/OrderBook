@@ -12,6 +12,7 @@ Complete guide to all project documentation.
 
 - **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Complete project organization
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design patterns
+- **[ARCHITECTURE_FLOW.md](ARCHITECTURE_FLOW.md)** - Detailed service communication flows and event diagrams
 - **[API_CONTRACT.md](API_CONTRACT.md)** - Inter-component communication protocols
 - **[API_REFERENCE.md](API_REFERENCE.md)** - WebSocket and REST API reference
 

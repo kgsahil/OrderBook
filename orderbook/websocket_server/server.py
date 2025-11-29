@@ -198,7 +198,25 @@ async def websocket_endpoint(websocket: WebSocket):
 
         while True:
             data = await websocket.receive_text()
-            message = json.loads(data)
+            try:
+                message = json.loads(data)
+            except json.JSONDecodeError as e:
+                logger.warning(f"Invalid JSON from client: {e}, data: {data[:200]}")
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "message": "Invalid JSON format"
+                }))
+                continue
+
+            if message.get("type") != "agent_register" and message.get("type") not in [
+                "add_order", "cancel_order", "get_portfolio", "agent_register"
+            ]:
+                logger.warning(f"Unknown message type: {message.get('type')}")
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "message": f"Unknown message type: {message.get('type')}"
+                }))
+                continue
 
             if message["type"] == "agent_register":
                 regular_connections.discard(websocket)
@@ -226,10 +244,61 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if message["type"] == "add_order":
                 symbol_id = message.get("symbol_id", 1)
-                side = message["side"]
-                order_type = message.get("orderType", "LIMIT")
-                price = message.get("price", 0)
-                quantity = message["quantity"]
+                side = message.get("side", "").upper()
+                order_type = message.get("orderType", "LIMIT").upper()
+                
+                # Validate side
+                if side not in ("BUY", "SELL"):
+                    await websocket.send_text(json.dumps({
+                        "type": "order_response",
+                        "data": {"status": "error", "message": f"Invalid side: must be 'buy' or 'sell', got '{message.get('side')}'"}
+                    }))
+                    continue
+                
+                # Validate order type
+                if order_type not in ("LIMIT", "MARKET"):
+                    await websocket.send_text(json.dumps({
+                        "type": "order_response",
+                        "data": {"status": "error", "message": f"Invalid order type: must be 'LIMIT' or 'MARKET', got '{message.get('orderType')}'"}
+                    }))
+                    continue
+                
+                # Validate quantity
+                quantity = message.get("quantity")
+                try:
+                    quantity = float(quantity)
+                    if quantity <= 0 or not isinstance(quantity, (int, float)):
+                        raise ValueError("Quantity must be a positive number")
+                except (TypeError, ValueError) as e:
+                    await websocket.send_text(json.dumps({
+                        "type": "order_response",
+                        "data": {"status": "error", "message": f"Invalid quantity: {e}"}
+                    }))
+                    continue
+                
+                # Validate price for LIMIT orders
+                price = message.get("price")
+                if order_type == "LIMIT":
+                    if price is None:
+                        await websocket.send_text(json.dumps({
+                            "type": "order_response",
+                            "data": {"status": "error", "message": "Price is required for LIMIT orders"}
+                        }))
+                        continue
+                    try:
+                        price = float(price)
+                        if price <= 0:
+                            raise ValueError("Price must be positive for LIMIT orders")
+                    except (TypeError, ValueError) as e:
+                        await websocket.send_text(json.dumps({
+                            "type": "order_response",
+                            "data": {"status": "error", "message": f"Invalid price for LIMIT order: {e}"}
+                        }))
+                        continue
+                else:
+                    # MARKET orders don't need price, set to 0
+                    price = 0
+                
                 agent_id = message.get("agent_id")
 
                 result = instrument_service.client.add_order(
@@ -252,8 +321,10 @@ async def websocket_endpoint(websocket: WebSocket):
                             # Track trade in performance metrics
                             performance_metrics.record_trade(quantity)
                             await broadcast_agents_snapshot()
-                        except Exception as exc:  # pragma: no cover
+                        except (ValueError, TypeError, KeyError) as exc:
                             logger.error("Error recording trade: %s", exc)
+                        except Exception as exc:  # pragma: no cover
+                            logger.exception("Unexpected error recording trade: %s", exc)
 
                     order_message = OrderPlacedMessage(
                         data=OrderPlacedPayload(
@@ -597,7 +668,23 @@ async def websocket_endpoint(websocket: WebSocket):
         # Listen for client messages
         while True:
             data = await websocket.receive_text()
-            message = json.loads(data)
+            try:
+                message = json.loads(data)
+            except json.JSONDecodeError as e:
+                logger.warning(f"Invalid JSON from client: {e}, data: {data[:200]}")
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "message": "Invalid JSON format"
+                }))
+                continue
+            
+            if message.get("type") not in ["agent_register", "add_order", "cancel_order", "get_portfolio"]:
+                logger.warning(f"Unknown message type: {message.get('type')}")
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "message": f"Unknown message type: {message.get('type')}"
+                }))
+                continue
             
             if message["type"] == "agent_register":
                 # Agent registration
@@ -645,12 +732,63 @@ async def websocket_endpoint(websocket: WebSocket):
                     }))
             
             elif message["type"] == "add_order":
-                # Place order
+                # Place order with validation
                 symbol_id = message.get("symbol_id", 1)
-                side = message["side"]
-                order_type = message.get("orderType", "LIMIT")
-                price = message.get("price", 0)
-                quantity = message["quantity"]
+                side = message.get("side", "").upper()
+                order_type = message.get("orderType", "LIMIT").upper()
+                
+                # Validate side
+                if side not in ("BUY", "SELL"):
+                    await websocket.send_text(json.dumps({
+                        "type": "order_response",
+                        "data": {"status": "error", "message": f"Invalid side: must be 'buy' or 'sell', got '{message.get('side')}'"}
+                    }))
+                    continue
+                
+                # Validate order type
+                if order_type not in ("LIMIT", "MARKET"):
+                    await websocket.send_text(json.dumps({
+                        "type": "order_response",
+                        "data": {"status": "error", "message": f"Invalid order type: must be 'LIMIT' or 'MARKET', got '{message.get('orderType')}'"}
+                    }))
+                    continue
+                
+                # Validate quantity
+                quantity = message.get("quantity")
+                try:
+                    quantity = float(quantity)
+                    if quantity <= 0 or not isinstance(quantity, (int, float)):
+                        raise ValueError("Quantity must be a positive number")
+                except (TypeError, ValueError) as e:
+                    await websocket.send_text(json.dumps({
+                        "type": "order_response",
+                        "data": {"status": "error", "message": f"Invalid quantity: {e}"}
+                    }))
+                    continue
+                
+                # Validate price for LIMIT orders - THIS IS THE KEY FIX FOR PRICE 0 ISSUE
+                price = message.get("price")
+                if order_type == "LIMIT":
+                    if price is None:
+                        await websocket.send_text(json.dumps({
+                            "type": "order_response",
+                            "data": {"status": "error", "message": "Price is required for LIMIT orders"}
+                        }))
+                        continue
+                    try:
+                        price = float(price)
+                        if price <= 0:
+                            raise ValueError("Price must be positive for LIMIT orders")
+                    except (TypeError, ValueError) as e:
+                        await websocket.send_text(json.dumps({
+                            "type": "order_response",
+                            "data": {"status": "error", "message": f"Invalid price for LIMIT order: {e}"}
+                        }))
+                        continue
+                else:
+                    # MARKET orders don't need price, set to 0
+                    price = 0
+                
                 agent_id = message.get("agent_id")
                 
                 result = ob_client.add_order(symbol_id, side, order_type, price, quantity)
@@ -674,8 +812,10 @@ async def websocket_endpoint(websocket: WebSocket):
                             # Track trade in performance metrics
                             performance_metrics.record_trade(quantity)
                             await broadcast_agents_snapshot()
-                        except Exception as e:
+                        except (ValueError, TypeError, KeyError) as e:
                             logger.error(f"Error recording trade: {e}")
+                        except Exception as e:
+                            logger.exception(f"Unexpected error recording trade: {e}")
                     
                     # Broadcast order event to all regular clients (dashboard)
                     order_event = json.dumps({

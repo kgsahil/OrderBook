@@ -132,7 +132,7 @@ void InstrumentManager::processEvents() {
     }
 }
 
-void InstrumentManager::setEventCallback(handlers::OutputHandler::EventCallback callback) {
+void InstrumentManager::setEventCallback(EventCallback callback) {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto& [symbolId, oms] : orderBooks_) {
         oms->setEventCallback(callback);

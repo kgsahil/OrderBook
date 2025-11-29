@@ -19,8 +19,8 @@ graph TD
     end
 
     subgraph "Business Logic Layer"
-        TCP_Server[C++ TCP Server]
-        OMS[Order Management System]
+        TCP_Server[C++ TCP Server<br/>Uses IOrderBookService Interface]
+        OMS[Order Management System<br/>Implements IOrderBookService]
         ME[Matching Engine]
         OB[OrderBook]
     end
@@ -33,7 +33,7 @@ graph TD
     Traders <-->|WebSocket JSON| WS_Server
     Agents <-->|WebSocket JSON| WS_Server
     
-    WS_Server <-->|TCP JSON| TCP_Server
+    WS_Server <-->|TCP JSON<br/>Connection Pool| TCP_Server
     
     TCP_Server -->|SPSC Queue| OMS
     OMS -->|Order Object| ME
@@ -45,8 +45,8 @@ graph TD
 ### Component Responsibilities
 
 *   **Presentation Layer**: Handles user interaction and visualization. It communicates exclusively via WebSockets.
-*   **Application Layer (Python)**: Acts as the gateway. It manages WebSocket connections, performs initial validation, and bridges the external JSON protocol to the internal TCP protocol.
-*   **Business Logic Layer (C++)**: The core engine. It executes orders with low latency using lock-free data structures. It is isolated from the network handling of the application layer.
+*   **Application Layer (Python)**: Acts as the gateway. It manages WebSocket connections, performs initial validation, and bridges the external JSON protocol to the internal TCP protocol. Uses connection pooling for efficient TCP communication with the C++ backend.
+*   **Business Logic Layer (C++)**: The core engine. It executes orders with low latency using lock-free data structures. It is isolated from the network handling of the application layer. The TCP server uses dependency injection via `IOrderBookService` interface for testability and flexibility.
 *   **Agent Layer**: Autonomous trading bots (LLM-enabled when configured, otherwise ML + heuristic strategies) that interact with the system exactly like human traders.
 
 ---
@@ -467,3 +467,118 @@ stateDiagram-v2
         SendErrorToClient --> [*]
     }
 ```
+
+---
+
+## 6. Design Improvements
+
+### 6.1 Dependency Injection via IOrderBookService Interface
+
+The TCP server has been refactored to use dependency injection, following the Dependency Inversion Principle (SOLID).
+
+**Architecture:**
+```mermaid
+classDiagram
+    class IOrderBookService {
+        <<interface>>
+        +submitOrder(Order) bool
+        +cancelOrder(symbolId, orderId) bool
+        +getBidsSnapshot(symbolId, depth) vector
+        +getAsksSnapshot(symbolId, depth) vector
+        +processEvents() void
+        +setEventCallback(callback) void
+    }
+    
+    class InstrumentManager {
+        +submitOrder(Order) bool
+        +cancelOrder(symbolId, orderId) bool
+        +getBidsSnapshot(symbolId, depth) vector
+        +getAsksSnapshot(symbolId, depth) vector
+        +processEvents() void
+        +setEventCallback(callback) void
+    }
+    
+    class OrderBookServer {
+        -service_ IOrderBookService*
+        +OrderBookServer(port, service)
+        +processRequest(request) string
+    }
+    
+    IOrderBookService <|.. InstrumentManager
+    OrderBookServer --> IOrderBookService : depends on abstraction
+```
+
+**Benefits:**
+- ✅ **Testability**: Can inject mock services for unit testing
+- ✅ **Swappable Implementations**: Easy to swap different OMS implementations
+- ✅ **SOLID Compliance**: Follows Dependency Inversion Principle
+- ✅ **Maintainability**: Changes to InstrumentManager don't require TCP server changes
+
+**Implementation:**
+- Interface defined in `orderbook/include/orderbook/oms/i_order_book_service.hpp`
+- `InstrumentManager` implements `IOrderBookService`
+- `OrderBookServer` accepts optional `IOrderBookService` in constructor (defaults to `InstrumentManager`)
+
+### 6.2 Connection Pooling for Python TCP Client
+
+The Python WebSocket server now uses connection pooling for efficient TCP communication with the C++ backend.
+
+**Architecture:**
+```mermaid
+sequenceDiagram
+    participant WS as WebSocket Server
+    participant Pool as Connection Pool
+    participant TCP as TCP Server
+    
+    Note over WS,Pool: Connection Pool Lifecycle
+    
+    WS->>Pool: get_connection()
+    alt Pool has available connection
+        Pool-->>WS: Return existing socket
+    else Pool empty or all busy
+        Pool->>TCP: Create new connection
+        TCP-->>Pool: Socket
+        Pool-->>WS: Return socket
+    end
+    
+    WS->>TCP: Send command via pooled socket
+    TCP-->>WS: Response
+    
+    WS->>Pool: return_connection(socket)
+    Pool->>Pool: Validate & store in pool
+    
+    Note over Pool: Idle timeout cleanup
+    Pool->>Pool: Close idle connections (>30s)
+```
+
+**Features:**
+- **Thread-Safe**: Multiple WebSocket clients can share the pool safely
+- **Configurable Pool Size**: Default 5 connections, adjustable
+- **Idle Timeout**: Connections idle >30s are closed automatically
+- **Health Checking**: Invalid connections are detected and replaced
+- **Retry Logic**: Exponential backoff on connection failures
+- **Graceful Degradation**: Falls back to new connections if pool exhausted
+
+**Performance Benefits:**
+- Reduced connection overhead (reuse vs. create per request)
+- Lower latency for subsequent requests (no TCP handshake)
+- Better resource management (bounded pool size)
+- Improved throughput under load
+
+**Configuration:**
+```python
+# Default (pooling enabled)
+client = OrderBookClient(host="localhost", port=9999)
+
+# Custom pool settings
+client = OrderBookClient(
+    host="localhost",
+    port=9999,
+    use_pooling=True,
+    max_connections=10,
+    connection_timeout=5.0
+)
+```
+
+**Files:**
+- `orderbook/websocket_server/services/orderbook_client.py` - Connection pool implementation

@@ -292,13 +292,17 @@ Decide: BUY/SELL/HOLD. Respond ONLY with JSON:
             price = action.get("price", 0)
             quantity = action.get("quantity", 0)
             
-            # Validate price for LIMIT orders
-            if order_type.upper() == "LIMIT" and price <= 0:
-                logger.warning(
-                    "[%s] Invalid price %s for LIMIT order, skipping. Action: %s",
-                    self.name, price, action
-                )
-                return state  # Skip this action
+            # Validate price for LIMIT orders - CRITICAL: prevent price 0 orders
+            if order_type.upper() == "LIMIT":
+                if price is None or price <= 0:
+                    logger.warning(
+                        "[%s] Invalid or missing price (%s) for LIMIT order, skipping. Action: %s",
+                        self.name, price, action
+                    )
+                    return state  # Skip this action
+            elif order_type.upper() == "MARKET":
+                # MARKET orders should have price=0 or None
+                price = 0
             
             if symbol_id and quantity > 0:
                 side = "BUY" if action_type == "BUY" else "SELL"

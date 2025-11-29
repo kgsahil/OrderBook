@@ -78,16 +78,25 @@ The OrderBook system is designed as a multi-tier architecture with clear separat
 
 **Key Features:**
 - Async/await for concurrent client handling
-- Connection pooling and management
+- **Connection pooling** - Thread-safe TCP connection pool with idle timeout
+- **Retry logic** - Exponential backoff for connection failures
 - Error handling and graceful degradation
 - Rate limiting (planned)
 - Authentication (planned)
 
 **Key Files:**
 - `websocket_server/server.py`
+- `websocket_server/services/orderbook_client.py` - Connection-pooled TCP client
 - `websocket_server/requirements.txt`
 
 **Port:** 8000 (exposed to public)
+
+**Connection Pooling:**
+- Configurable pool size (default: 5 connections)
+- Idle timeout (default: 30 seconds)
+- Automatic connection health checking
+- Thread-safe operations
+- Graceful degradation if pool exhausted
 
 ### 3. TCP Server (Business Logic Layer)
 
@@ -96,13 +105,33 @@ The OrderBook system is designed as a multi-tier architecture with clear separat
 **Responsibilities:**
 - Listen for TCP connections from WebSocket server
 - Parse JSON order messages
-- Forward orders to OMS
+- Forward orders to OMS via abstract interface
 - Return orderbook snapshots and order acknowledgments
 
+**Key Features:**
+- **Dependency Injection** - Uses `IOrderBookService` interface for testability
+- **Swappable Implementations** - Can inject mock services for testing
+- **SOLID Design** - Follows Dependency Inversion Principle
+
 **Key Files:**
-- `apps/ob_server.cpp`
+- `apps/ob_server.cpp` - TCP server with dependency injection
+- `include/orderbook/oms/i_order_book_service.hpp` - Abstract service interface
+- `include/orderbook/oms/instrument_manager.hpp` - Concrete implementation
 
 **Port:** 9999 (internal, not exposed)
+
+**Architecture:**
+```cpp
+// TCP Server uses abstract interface
+class OrderBookServer {
+    std::unique_ptr<oms::IOrderBookService> service_;  // Dependency injection
+};
+
+// InstrumentManager implements the interface
+class InstrumentManager : public IOrderBookService {
+    // All interface methods implemented
+};
+```
 
 ### 4. Order Management System (Core)
 
@@ -251,7 +280,9 @@ Lock-free single-producer, single-consumer ring buffer:
 
 **Dependency Inversion:**
 - `MatchingEngine` depends on `IOrderBook`, not `OrderBook`
+- `OrderBookServer` depends on `IOrderBookService`, not `InstrumentManager`
 - High-level modules don't depend on low-level details
+- Enables dependency injection and testability
 
 ### Other Patterns
 
@@ -260,6 +291,8 @@ Lock-free single-producer, single-consumer ring buffer:
 - **Command:** Orders as command objects
 - **Facade:** OMS wraps complex subsystems
 - **Strategy:** Different matching algorithms (future)
+- **Dependency Injection:** TCP server uses `IOrderBookService` interface
+- **Connection Pool:** Python client reuses TCP connections
 
 ## Scalability Considerations
 

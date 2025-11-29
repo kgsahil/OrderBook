@@ -36,6 +36,9 @@ orderbook/
 │   ├── events/                   # Event system
 │   ├── handlers/                 # I/O handlers
 │   ├── oms/                      # Order Management System
+│   │   ├── i_order_book_service.hpp  # Abstract service interface (DI)
+│   │   ├── instrument_manager.hpp    # Concrete implementation
+│   │   └── order_management_system.hpp
 │   ├── processors/               # Order processing
 │   └── queue/                    # Lock-free data structures
 │
@@ -50,6 +53,8 @@ orderbook/
 │   ├── requirements.txt         # Python dependencies
 │   ├── models/                  # Data models
 │   └── services/                # Business logic services
+│       ├── orderbook_client.py  # Connection-pooled TCP client
+│       └── ...
 │
 ├── docker/                       # Docker configuration
 │   └── supervisord.conf         # Process manager config
