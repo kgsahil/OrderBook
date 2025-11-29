@@ -26,7 +26,7 @@ graph TD
     end
 
     subgraph "Agent Layer"
-        Agents[AI Trading Agents (LLM / ML / Heuristic)]
+        Agents[AI Trading Agents]
     end
 
     Dashboard <-->|WebSocket JSON| WS_Server
