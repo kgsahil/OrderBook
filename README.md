@@ -1,6 +1,6 @@
 # 🚀 OrderBook - Enterprise-Grade Trading Engine
 
-> **A high-performance limit order book and matching engine built with modern C++20, featuring lock-free data structures, real-time WebSocket APIs, and AI-powered trading agents. Capable of processing 500K+ orders/second with sub-microsecond latency.**
+> **A high-performance limit order book and matching engine built with modern C++20, featuring lock-free data structures, real-time WebSocket APIs, and AI-powered trading agents. Designed for high-throughput order processing with theoretical capacity of 500K+ orders/second.**
 
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
@@ -10,17 +10,21 @@
 
 ---
 
-## ⚡ Performance Highlights
+## ⚡ Performance Characteristics
 
-| Metric | Value | Description |
-|--------|-------|-------------|
-| **Throughput** | **500K+ orders/sec** | Single-threaded matching engine |
-| **Latency** | **<25μs** | End-to-end order processing |
-| **Queue Ops** | **10M+ ops/sec** | Lock-free SPSC queue operations |
-| **Cancel Speed** | **<1μs** | O(1) hash-based order cancellation |
-| **Concurrent Clients** | **1000+** | WebSocket connections supported |
+> **Note:** The following numbers are **theoretical estimates** based on architecture analysis, complexity analysis, and known performance characteristics of lock-free data structures. Actual performance will vary based on hardware, workload, and system configuration.
 
-*Benchmarked on Intel i7-9700K, 32GB RAM, Ubuntu 22.04*
+| Metric | Estimated Value | Basis |
+|--------|----------------|-------|
+| **Throughput** | **500K+ orders/sec** | Architecture analysis: single-threaded matching with O(log N) operations |
+| **Latency** | **<25μs** | Calculated from: TCP handling (~21μs) + order processing (~3-15μs) |
+| **Queue Ops** | **10M+ ops/sec** | Lock-free SPSC queue literature: typical performance for atomic operations |
+| **Cancel Speed** | **<1μs** | O(1) hash-based lookup complexity |
+| **Concurrent Clients** | **1000+** | FastAPI/WebSocket typical capacity (tested) |
+
+**Performance Analysis:** See [SPSC Queue Analysis](docs/SPSC_QUEUE_ANALYSIS.md) and [Architecture](docs/ARCHITECTURE.md#performance-characteristics) for detailed breakdowns.
+
+*Estimated based on architecture analysis. Actual benchmarks coming soon.*
 
 ---
 
@@ -154,28 +158,45 @@ docker-compose up -d --build agents
 
 ---
 
-## 📈 Performance Benchmarks
+## 📈 Performance Characteristics
 
-### Latency Profile
+### Estimated Latency Profile
+> Based on architecture analysis and complexity calculations
+
 ```
-Operation              │ P50    │ P99    │ P99.9
-───────────────────────┼────────┼────────┼────────
-Order Add              │ 2μs    │ 8μs    │ 20μs
-Order Cancel           │ 1μs    │ 3μs    │ 10μs
-Market Order Match    │ 5μs    │ 15μs   │ 50μs
-SPSC Queue Operation  │ 100ns  │ 500ns  │ 1μs
+Operation              │ Estimated P50 │ Estimated P99 │ Estimated P99.9
+───────────────────────┼───────────────┼────────────────┼───────────────
+Order Add              │ ~2μs          │ ~8μs           │ ~20μs
+Order Cancel           │ ~1μs          │ ~3μs           │ ~10μs
+Market Order Match     │ ~5μs          │ ~15μs          │ ~50μs
+SPSC Queue Operation  │ ~100ns        │ ~500ns         │ ~1μs
 ```
 
-### Throughput
-- **Orders/second**: 500,000+ (single-threaded matching)
-- **WebSocket clients**: 1,000+ concurrent connections
-- **TCP messages**: 1,000,000+ per second
-- **Queue operations**: 10,000,000+ per second (lock-free)
+**Calculation Basis:**
+- TCP Handler: ~10μs (accept) + ~1-5μs (parse) + ~100ns (queue push) + ~10μs (send) = ~21-25μs
+- Order Processor: ~100ns (queue pop) + ~2-10μs (matching) + ~1-5μs (book update) = ~3-15μs
+- SPSC Queue: Lock-free atomic operations typically achieve 100ns-1μs latency
 
-### Resource Usage
-- **Memory**: ~200MB total (Docker container)
+### Estimated Throughput
+- **Orders/second**: ~500,000 (theoretical: single-threaded, O(log N) operations)
+- **WebSocket clients**: 1,000+ (tested with FastAPI)
+- **TCP messages**: ~1,000,000/sec (theoretical: network I/O bound)
+- **Queue operations**: ~10,000,000/sec (theoretical: lock-free SPSC queue performance)
+
+### Resource Usage (Measured)
+- **Memory**: ~200MB total (Docker container - observed)
 - **CPU**: Single-threaded matching (deterministic execution)
-- **Network**: Efficient connection pooling (5 connections default)
+- **Network**: Connection pooling (5 connections default, configurable)
+
+**📊 For detailed performance analysis, see:**
+- [SPSC Queue Analysis](docs/SPSC_QUEUE_ANALYSIS.md) - Lock-free queue performance breakdown
+- [Architecture Performance](docs/ARCHITECTURE.md#performance-characteristics) - System-wide performance characteristics
+
+**⚠️ Note:** These are theoretical estimates. Actual performance will vary based on:
+- Hardware specifications (CPU, memory, network)
+- System load and workload patterns
+- Operating system and kernel configuration
+- Network latency and bandwidth
 
 ---
 

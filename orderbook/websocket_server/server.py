@@ -208,6 +208,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 }))
                 continue
 
+            # Handle ping/pong heartbeat messages
+            if message.get("type") == "ping":
+                await websocket.send_text(json.dumps({
+                    "type": "pong"
+                }))
+                continue
+
             if message.get("type") != "agent_register" and message.get("type") not in [
                 "add_order", "cancel_order", "get_portfolio", "agent_register"
             ]:

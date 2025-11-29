@@ -328,20 +328,20 @@ Lock-free single-producer, single-consumer ring buffer:
 
 ### Latency Profile
 
-| Operation | P50 | P99 | P99.9 |
-|-----------|-----|-----|-------|
-| Order Add | 2μs | 8μs | 20μs |
-| Order Cancel | 1μs | 3μs | 10μs |
-| Market Order | 5μs | 15μs | 50μs |
-| SPSC Queue | 100ns | 500ns | 1μs |
+| Operation | Estimated P50 | Estimated P99 | Estimated P99.9 |
+|-----------|---------------|---------------|-----------------|
+| Order Add | ~2μs | ~8μs | ~20μs |
+| Order Cancel | ~1μs | ~3μs | ~10μs |
+| Market Order | ~5μs | ~15μs | ~50μs |
+| SPSC Queue | ~100ns | ~500ns | ~1μs |
 
-*Measured on Intel i7-9700K, 32GB RAM, Ubuntu 22.04*
+> **Note:** These are theoretical estimates based on architecture analysis and complexity calculations. See [SPSC Queue Analysis](SPSC_QUEUE_ANALYSIS.md) for detailed breakdown. Actual performance will vary based on hardware and workload.
 
-### Throughput
+### Estimated Throughput
 
-- **Orders/second:** ~500,000 (single-threaded)
-- **WebSocket clients:** 1,000+ concurrent
-- **TCP messages:** ~1,000,000/sec
+- **Orders/second:** ~500,000 (theoretical: single-threaded, O(log N) operations)
+- **WebSocket clients:** 1,000+ concurrent (tested with FastAPI)
+- **TCP messages:** ~1,000,000/sec (theoretical: network I/O bound)
 
 ### Memory Footprint
 

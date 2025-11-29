@@ -391,12 +391,23 @@ window.tradingDashboard = function tradingDashboard() {
                     case 'news_history':
                         this.newsItems = message.data || [];
                         break;
+                    case 'ping':
+                        // Heartbeat request - respond with pong (handled by server)
+                        // Just acknowledge, no action needed
+                        break;
                     case 'pong':
-                        // Heartbeat response
+                        // Heartbeat response - connection is alive
+                        this.lastMessageTime = Date.now();
                         break;
                     case 'error':
-                        console.error('Server error:', message.message || message);
-                        this.showToast('Server Error', message.message || 'An error occurred', 'error');
+                        // Only show error toast if it's not a ping-related error
+                        if (message.message && !message.message.includes('ping')) {
+                            console.error('Server error:', message.message || message);
+                            this.showToast('Server Error', message.message || 'An error occurred', 'error');
+                        } else {
+                            // Silently ignore ping-related errors
+                            console.debug('Ignored ping-related error:', message.message);
+                        }
                         break;
                     default:
                         // Unknown message type, log but don't break
