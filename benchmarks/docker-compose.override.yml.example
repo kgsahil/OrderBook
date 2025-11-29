@@ -1,0 +1,21 @@
+# Example override file for running benchmarks
+# Copy this to docker-compose.override.yml and customize as needed
+
+version: '3.8'
+
+services:
+  benchmarks:
+    # Override environment variables
+    environment:
+      - ORDERBOOK_HOST=orderbook
+      - ORDERBOOK_PORT=8000
+      - TCP_HOST=orderbook
+      - TCP_PORT=9999
+    
+    # Mount additional volumes if needed
+    volumes:
+      - ./benchmarks/results:/app/results
+      - ./benchmarks/reports:/app/reports
+      # Uncomment to mount orderbook source for development
+      # - ./orderbook:/app/orderbook:ro
+
